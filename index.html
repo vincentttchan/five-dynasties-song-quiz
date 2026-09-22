@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動歷史小測：五代十國與北宋中央集權</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8f6f0;
+            color: #2c2825;
+        }
+
+        .font-serif-tc {
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        .paper-card {
+            background: #fffdf9;
+            border: 1px solid #e2d9cc;
+            box-shadow: 0 4px 20px -2px rgba(80, 60, 40, 0.08);
+        }
+
+        .tab-btn.active {
+            border-bottom: 3px solid #991b1b;
+            color: #991b1b;
+            font-weight: 700;
+        }
+
+        .choice-option {
+            transition: all 0.2s ease;
+        }
+
+        .choice-option:hover {
+            background-color: #f3ece0;
+            border-color: #b45309;
+        }
+
+        .choice-option.selected {
+            background-color: #fef3c7;
+            border-color: #d97706;
+        }
+
+        .choice-option.correct {
+            background-color: #dcfce7 !important;
+            border-color: #16a34a !important;
+            color: #14532d !important;
+        }
+
+        .choice-option.incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #dc2626 !important;
+            color: #7f1d1d !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <span class="inline-block px-3 py-1 bg-amber-100 text-amber-900 text-xs font-semibold rounded-full tracking-wider uppercase mb-2">歷史互動復習教材</span>
+            <h1 class="text-3xl sm:text-4xl font-extrabold font-serif-tc text-stone-900 tracking-tight">五代十國與北宋中央集權</h1>
+            <p class="mt-2 text-stone-600 text-sm sm:text-base">根據課堂圖表精選設計之自我檢測評量</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-stone-300 mb-6 bg-stone-100/60 rounded-t-lg overflow-x-auto">
+            <button onclick="switchTab('mcq')" id="tab-mcq" class="tab-btn active px-5 py-3 text-sm sm:text-base text-stone-600 whitespace-nowrap focus:outline-none">
+                第一部分：選擇題
+            </button>
+            <button onclick="switchTab('blanks')" id="tab-blanks" class="tab-btn px-5 py-3 text-sm sm:text-base text-stone-600 whitespace-nowrap focus:outline-none">
+                第二部分：填空與配對
+            </button>
+            <button onclick="switchTab('saq')" id="tab-saq" class="tab-btn px-5 py-3 text-sm sm:text-base text-stone-600 whitespace-nowrap focus:outline-none">
+                第三部分：簡答思考題
+            </button>
+        </div>
+
+        <!-- MAIN CONTAINER -->
+        <main>
+            <!-- ================= PART 1: MCQ ================= -->
+            <section id="sec-mcq" class="space-y-6">
+                <div class="paper-card rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-stone-200">
+                        <h2 class="text-xl font-bold font-serif-tc text-amber-900">第一部分：單項選擇題</h2>
+                        <span id="mcq-score" class="text-sm font-semibold text-stone-500">得分：- / 50</span>
+                    </div>
+                    
+                    <div id="mcq-container" class="space-y-8">
+                        <!-- Questions dynamically built by JS -->
+                    </div>
+
+                    <div class="mt-8 pt-4 border-t border-stone-200 flex justify-end">
+                        <button onclick="checkMCQAnswers()" class="px-6 py-2.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-lg shadow-sm transition-colors">
+                            對答案與查看解析
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= PART 2: FILL-IN & MATCHING ================= -->
+            <section id="sec-blanks" class="space-y-6 hidden">
+                <!-- Fill in the blanks -->
+                <div class="paper-card rounded-xl p-6">
+                    <h2 class="text-xl font-bold font-serif-tc text-amber-900 mb-4 pb-3 border-b border-stone-200">填空題</h2>
+                    <form id="blanks-form" class="space-y-6 text-stone-800 text-base leading-relaxed">
+                        <div class="p-4 bg-stone-50 rounded-lg border border-stone-200">
+                            <p class="mb-2">1. 五代政局特點為武人專政。宋太祖汲取教訓，確立了：</p>
+                            <p class="ml-4">
+                                「強<input type="text" id="blank1" class="w-16 mx-1 border-b-2 border-stone-400 bg-transparent text-center font-bold text-amber-900 focus:outline-none focus:border-amber-700" placeholder="?">弱<input type="text" id="blank2" class="w-16 mx-1 border-b-2 border-stone-400 bg-transparent text-center font-bold text-amber-900 focus:outline-none focus:border-amber-700" placeholder="?">」與
+                                「重<input type="text" id="blank3" class="w-16 mx-1 border-b-2 border-stone-400 bg-transparent text-center font-bold text-amber-900 focus:outline-none focus:border-amber-700" placeholder="?">輕<input type="text" id="blank4" class="w-16 mx-1 border-b-2 border-stone-400 bg-transparent text-center font-bold text-amber-900 focus:outline-none focus:border-amber-700" placeholder="?">」之國策。
+                            </p>
+                        </div>
+
+                        <div class="p-4 bg-stone-50 rounded-lg border border-stone-200">
+                            <p>2. 宋太祖透過溫和手段奪回禁軍將領兵權，史稱「杯酒<input type="text" id="blank5" class="w-16 mx-1 border-b-2 border-stone-400 bg-transparent text-center font-bold text-amber-900 focus:outline-none focus:border-amber-700" placeholder="?">兵權」。</p>
+                        </div>
+
+                        <div class="p-4 bg-stone-50 rounded-lg border border-stone-200">
+                            <p>3. 北宋精銳軍隊稱為「<input type="text" id="blank6" class="w-16 mx-1 border-b-2 border-stone-400 bg-transparent text-center font-bold text-amber-900 focus:outline-none focus:border-amber-700" placeholder="?">軍」，置於中央；老弱殘兵稱為「<input type="text" id="blank7" class="w-16 mx-1 border-b-2 border-stone-400 bg-transparent text-center font-bold text-amber-900 focus:outline-none focus:border-amber-700" placeholder="?">軍」，鎮守地方。</p>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Matching -->
+                <div class="paper-card rounded-xl p-6">
+                    <h2 class="text-xl font-bold font-serif-tc text-amber-900 mb-4 pb-3 border-b border-stone-200">職務與職責配對</h2>
+                    <p class="text-sm text-stone-600 mb-4">請為左側的職務選擇相對應的正確職責：</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-200 gap-2">
+                            <span class="font-bold text-stone-800">1. 三司使</span>
+                            <select id="match1" class="border border-stone-300 rounded px-3 py-1.5 bg-white text-stone-800 text-sm focus:outline-none focus:ring-1 focus:ring-amber-700">
+                                <option value="">-- 請選擇職責 --</option>
+                                <option value="A">A. 監察地方長官（知州）</option>
+                                <option value="B">B. 作為副相，監視與制衡宰相</option>
+                                <option value="C">C. 掌控國家財政大權</option>
+                                <option value="D">D. 掌控國家軍政大權</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-200 gap-2">
+                            <span class="font-bold text-stone-800">2. 樞密使</span>
+                            <select id="match2" class="border border-stone-300 rounded px-3 py-1.5 bg-white text-stone-800 text-sm focus:outline-none focus:ring-1 focus:ring-amber-700">
+                                <option value="">-- 請選擇職責 --</option>
+                                <option value="A">A. 監察地方長官（知州）</option>
+                                <option value="B">B. 作為副相，監視與制衡宰相</option>
+                                <option value="C">C. 掌控國家財政大權</option>
+                                <option value="D">D. 掌控國家軍政大權</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-200 gap-2">
+                            <span class="font-bold text-stone-800">3. 參知政事</span>
+                            <select id="match3" class="border border-stone-300 rounded px-3 py-1.5 bg-white text-stone-800 text-sm focus:outline-none focus:ring-1 focus:ring-amber-700">
+                                <option value="">-- 請選擇職責 --</option>
+                                <option value="A">A. 監察地方長官（知州）</option>
+                                <option value="B">B. 作為副相，監視與制衡宰相</option>
+                                <option value="C">C. 掌控國家財政大權</option>
+                                <option value="D">D. 掌控國家軍政大權</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-stone-50 rounded-lg border border-stone-200 gap-2">
+                            <span class="font-bold text-stone-800">4. 通判</span>
+                            <select id="match4" class="border border-stone-300 rounded px-3 py-1.5 bg-white text-stone-800 text-sm focus:outline-none focus:ring-1 focus:ring-amber-700">
+                                <option value="">-- 請選擇職責 --</option>
+                                <option value="A">A. 監察地方長官（知州）</option>
+                                <option value="B">B. 作為副相，監視與制衡宰相</option>
+                                <option value="C">C. 掌控國家財政大權</option>
+                                <option value="D">D. 掌控國家軍政大權</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="checkBlanksAndMatch()" class="px-6 py-2.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-lg shadow-sm transition-colors">
+                            核對填空與配對答案
+                        </button>
+                    </div>
+
+                    <div id="part2-result" class="mt-4 p-4 rounded-lg hidden"></div>
+                </div>
+            </section>
+
+            <!-- ================= PART 3: SHORT ANSWER ================= -->
+            <section id="sec-saq" class="space-y-6 hidden">
+                <div class="paper-card rounded-xl p-6">
+                    <h2 class="text-xl font-bold font-serif-tc text-amber-900 mb-4 pb-3 border-b border-stone-200">第三部分：簡答思考題</h2>
+                    
+                    <div class="bg-amber-50/60 p-4 rounded-lg border border-amber-200/80 mb-6 text-stone-800 text-sm sm:text-base leading-relaxed">
+                        <span class="font-bold text-amber-900">情境思考：</span><br>
+                        五代時期政權頻繁更替（國祚短促），武將常靠掌控兵權發動兵變篡位（如陳橋兵變）。如果你是宋太祖，請列出<strong>至少兩項</strong>你在<strong>政治</strong>或<strong>經濟</strong>上用來削弱地方權力、防止地方作亂的具體做法。
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="saq-input" class="block text-sm font-medium text-stone-700 mb-2">作答區：</label>
+                        <textarea id="saq-input" rows="5" class="w-full p-3 border border-stone-300 rounded-lg bg-white text-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-700" placeholder="請在此輸入你的思考答案..."></textarea>
+                    </div>
+
+                    <div class="flex justify-end mb-6">
+                        <button onclick="toggleSAQAnswer()" class="px-6 py-2.5 bg-amber-800 hover:bg-amber-900 text-white font-medium rounded-lg shadow-sm transition-colors">
+                            顯示參考答案與說明
+                        </button>
+                    </div>
+
+                    <!-- Hidden Reference Answer -->
+                    <div id="saq-answer" class="hidden p-5 bg-stone-100 rounded-lg border border-stone-300 space-y-3">
+                        <h3 class="font-bold text-amber-900 text-base">標準參考答案：</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-sm sm:text-base text-stone-800">
+                            <li><strong class="text-amber-950">政治方面：</strong>派文官出任地方長官（知州），並設置「通判」監察知州，監視與分化地方長官權力。</li>
+                            <li><strong class="text-amber-950">經濟方面：</strong>實行「削地方財權」，除地方必要開支外，地方稅收一律上繳中央，防止地方積蓄財力作亂。</li>
+                            <li><strong class="text-amber-950">軍事補充：</strong>實行「更戍法」（三年一調防），並將精銳（禁軍）置於中央，地方僅留老弱殘兵（廂軍）。</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            document.getElementById('sec-mcq').classList.add('hidden');
+            document.getElementById('sec-blanks').classList.add('hidden');
+            document.getElementById('sec-saq').classList.add('hidden');
+
+            document.getElementById('sec-' + tabId).classList.remove('hidden');
+        }
+
+        // MCQ Data
+        const mcqData = [
+            {
+                id: 1,
+                question: "五代時期，石敬瑭為了取得契丹支持，割讓了哪一個關鍵地區，導致後來的北宋失去長城防線？",
+                options: ["(A) 汴京", "(B) 燕雲十六州", "(C) 長江流域", "(D) 陳橋驛"],
+                correct: 1,
+                explanation: "解析：後晉石敬瑭將燕雲十六州割讓給外族契丹，使中原及後來的北宋失去了長城的天然防禦屏障。"
+            },
+            {
+                id: 2,
+                question: "宋太祖趙匡胤在統一全國時，採取了下列哪一項軍事方針？",
+                options: [
+                    "(A) 先北後南",
+                    "(B) 先南後北，先消滅南方較弱國家",
+                    "(C) 守內虛外，與周邊政權和親",
+                    "(D) 遠交近攻，直取北方契丹"
+                ],
+                correct: 1,
+                explanation: "解析：宋太祖採「先南後北」策略，先消滅南方經濟充裕但軍事較弱的政權，統一南方後再消滅北漢。"
+            },
+            {
+                id: 3,
+                question: "趙匡胤發動兵變、被士卒「黃袍加身」擁立為皇帝的地點在哪裡？",
+                options: ["(A) 汴京", "(B) 洛陽", "(C) 陳橋驛", "(D) 雁門關"],
+                correct: 2,
+                explanation: "解析：趙匡胤假稱遼國入侵帶兵出征，行軍至陳橋驛時發生兵變，黃袍加身建立北宋。"
+            },
+            {
+                id: 4,
+                question: "為防止宰相權力過大，北宋在中央設立了什麼職位或機構來分化宰相的權力？",
+                options: [
+                    "(A) 設立「通判」分掌軍事",
+                    "(B) 設立「三司使」掌財權、「樞密使」掌軍權",
+                    "(C) 設立「廂軍」監視中央官員",
+                    "(D) 設立「知州」管理財政"
+                ],
+                correct: 1,
+                explanation: "解析：北宋削弱宰相權力，將財權分給三司使，軍權分給樞密使，並設參知政事為副相。"
+            },
+            {
+                id: 5,
+                question: "關於北宋軍事制度「更戍法」的敘述，下列何者正確？",
+                options: [
+                    "(A) 允許地方武將長期駐紮同一地方",
+                    "(B) 將老弱殘兵編為禁軍駐紮中央",
+                    "(C) 兵隊每三年調防一次，達到「兵將不相知」以防止作亂",
+                    "(D) 完全取消軍隊，改由文官直接執法"
+                ],
+                correct: 2,
+                explanation: "解析：更戍法規定軍隊每三年調防一次，使兵不識將、將不識兵，防止兵將關係過於緊密形成割據。"
+            }
+        ];
+
+        let selectedMCQ = {};
+
+        // Render MCQ
+        function renderMCQ() {
+            const container = document.getElementById('mcq-container');
+            container.innerHTML = mcqData.map((q, idx) => `
+                <div class="space-y-3">
+                    <p class="font-bold text-stone-800 text-base sm:text-lg">${idx + 1}. ${q.question}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        ${q.options.map((opt, optIdx) => `
+                            <button 
+                                type="button"
+                                onclick="selectOption(${q.id},${optIdx})"
+                                id="opt-${q.id}-${optIdx}"
+                                class="choice-option text-left px-4 py-3 border border-stone-300 rounded-lg text-sm text-stone-800 focus:outline-none">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div id="exp-${q.id}" class="hidden p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-xs sm:text-sm text-stone-700">
+                        ${q.explanation}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectOption(qId, optIdx) {
+            selectedMCQ[qId] = optIdx;
+            const q = mcqData.find(item => item.id === qId);
+            q.options.forEach((_, i) => {
+                const btn = document.getElementById(`opt-${qId}-${i}`);
+                btn.classList.remove('selected');
+            });
+            document.getElementById(`opt-${qId}-${optIdx}`).classList.add('selected');
+        }
+
+        function checkMCQAnswers() {
+            let score = 0;
+            mcqData.forEach(q => {
+                const selected = selectedMCQ[q.id];
+                const exp = document.getElementById(`exp-${q.id}`);
+                exp.classList.remove('hidden');
+
+                q.options.forEach((_, i) => {
+                    const btn = document.getElementById(`opt-${q.id}-${i}`);
+                    btn.classList.remove('selected', 'correct', 'incorrect');
+
+                    if (i === q.correct) {
+                        btn.classList.add('correct');
+                    }
+                    if (selected !== undefined && selected === i && selected !== q.correct) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+
+                if (selected === q.correct) {
+                    score += 10;
+                }
+            });
+
+            document.getElementById('mcq-score').innerText = `得分：${score} / 50`;
+        }
+
+        // Check Part 2 (Fill-in & Match)
+        function checkBlanksAndMatch() {
+            const blankAns = {
+                blank1: "幹",
+                blank2: "枝",
+                blank3: "文",
+                blank4: "武",
+                blank5: "釋",
+                blank6: "禁",
+                blank7: "廂"
+            };
+
+            const matchAns = {
+                match1: "C",
+                match2: "D",
+                match3: "B",
+                match4: "A"
+            };
+
+            let correctCount = 0;
+            let totalCount = Object.keys(blankAns).length + Object.keys(matchAns).length;
+
+            // Check Blanks
+            for (let id in blankAns) {
+                const input = document.getElementById(id);
+                const val = input.value.trim();
+                if (val === blankAns[id]) {
+                    input.className = "w-16 mx-1 border-b-2 border-green-600 bg-green-50 text-center font-bold text-green-800 focus:outline-none";
+                    correctCount++;
+                } else {
+                    input.className = "w-16 mx-1 border-b-2 border-red-500 bg-red-50 text-center font-bold text-red-800 focus:outline-none";
+                }
+            }
+
+            // Check Matching
+            for (let id in matchAns) {
+                const select = document.getElementById(id);
+                if (select.value === matchAns[id]) {
+                    select.className = "border-2 border-green-600 bg-green-50 rounded px-3 py-1.5 text-green-900 text-sm font-medium focus:outline-none";
+                    correctCount++;
+                } else {
+                    select.className = "border-2 border-red-500 bg-red-50 rounded px-3 py-1.5 text-red-900 text-sm font-medium focus:outline-none";
+                }
+            }
+
+            const resultDiv = document.getElementById('part2-result');
+            resultDiv.classList.remove('hidden');
+            if (correctCount === totalCount) {
+                resultDiv.className = "mt-4 p-4 rounded-lg bg-green-100 border border-green-300 text-green-900 font-medium";
+                resultDiv.innerText = "太棒了！全對！你對北宋集權官制與政策相當熟悉！";
+            } else {
+                resultDiv.className = "mt-4 p-4 rounded-lg bg-amber-100 border border-amber-300 text-amber-900 font-medium";
+                resultDiv.innerText = `完成答題：答對 ${correctCount} / ${totalCount} 題。紅框部分表示答案有誤，請再試試看！`;
+            }
+        }
+
+        // Toggle SAQ Answer
+        function toggleSAQAnswer() {
+            const saq = document.getElementById('saq-answer');
+            saq.classList.toggle('hidden');
+        }
+
+        // Initialize page
+        window.onload = function() {
+            renderMCQ();
+        };
+    </script>
+</body>
+</html>
