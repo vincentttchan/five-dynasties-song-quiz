@@ -44,67 +44,141 @@ const saqs = [
 
 let current = 0;
 let answers = Array(mcqData.length).fill(null);
+let submitted = false;
 const $ = id => document.getElementById(id);
 const letters = ["A","B","C","D"];
 
 function renderQuestion(){
   const item=mcqData[current];
   const answered=answers.filter(v=>v!==null).length;
-  const correct=answers.reduce((n,v,i)=>n+(v===mcqData[i].answer?1:0),0);
   $("question-counter").textContent=`第 ${current+1} 題／共 ${mcqData.length} 題`;
   $("progress-label").textContent=`作答進度 ${Math.round(answered/mcqData.length*100)}%`;
   $("progress-fill").style.width=`${answered/mcqData.length*100}%`;
   $("question-title").textContent=item.q;
   $("options").innerHTML=item.options.map((text,index)=>{
     let state="";
-    if(answers[current]!==null){if(index===item.answer)state="correct";else if(index===answers[current])state="incorrect"}
-    return `<button class="option ${state}" data-option="${index}" ${answers[current]!==null?"disabled":""}><span class="option-letter">${letters[index]}</span><span>${text}</span></button>`;
+    if(submitted){if(index===item.answer)state="correct";else if(index===answers[current])state="incorrect"}
+    else if(index===answers[current])state="selected";
+    return `<button class="option ${state}" data-option="${index}" aria-pressed="${answers[current]===index}" ${submitted?"disabled":""}><span class="option-letter">${letters[index]}</span><span>${text}</span></button>`;
   }).join("");
   const exp=$("explanation");
-  if(answers[current]!==null){exp.hidden=false;exp.innerHTML=`<strong>${answers[current]===item.answer?"答對了":`正確答案：${letters[item.answer]}`}</strong>${item.exp}`}else exp.hidden=true;
+  if(submitted){exp.hidden=false;exp.innerHTML=`<strong>${answers[current]===item.answer?"答對了":`正確答案：${letters[item.answer]}`}</strong>${item.exp}`}else exp.hidden=true;
   $("prev-question").disabled=current===0;
-  $("next-question").textContent=current===mcqData.length-1?"返回第一題":"下一題";
+  $("next-question").textContent=current===mcqData.length-1?"前往填空與配對":"下一題";
   document.querySelectorAll(".topic-list li").forEach((li,i)=>li.classList.toggle("active",i===item.topic));
-  updateOverview(answered,correct);
+  updateOverview(answered);
 }
 
-function updateOverview(answered=answers.filter(v=>v!==null).length,correct=answers.reduce((n,v,i)=>n+(v===mcqData[i].answer?1:0),0)){
-  $("answered-count").textContent=answered; $("correct-count").textContent=correct; $("wrong-count").textContent=answered-correct;
+function updateOverview(answered=answers.filter(v=>v!==null).length){
+  $("answered-count").textContent=answered;
   $("score-ring").style.setProperty("--ring",`${answered/mcqData.length*100}%`);
+  $("score-stats").hidden=!submitted;
+  if(submitted){
+    const correct=answers.reduce((n,v,i)=>n+(v===mcqData[i].answer?1:0),0);
+    $("correct-count").textContent=correct;
+    $("wrong-count").textContent=answered-correct;
+  }
   $("question-grid").innerHTML=mcqData.map((_,i)=>{
-    const state=i===current?"current":answers[i]===null?"":answers[i]===mcqData[i].answer?"right":"wrong";
+    const state=i===current?"current":answers[i]===null?"":submitted?(answers[i]===mcqData[i].answer?"right":"wrong"):"answered";
     return `<button class="q-jump ${state}" data-jump="${i}" aria-label="前往第 ${i+1} 題">${i+1}</button>`;
   }).join("");
 }
 
-$("options").addEventListener("click",e=>{const b=e.target.closest("[data-option]");if(!b||answers[current]!==null)return;answers[current]=Number(b.dataset.option);renderQuestion()});
+$("options").addEventListener("click",e=>{const b=e.target.closest("[data-option]");if(!b||submitted)return;answers[current]=Number(b.dataset.option);$("submission-result").hidden=true;renderQuestion()});
 $("question-grid").addEventListener("click",e=>{const b=e.target.closest("[data-jump]");if(b){current=Number(b.dataset.jump);renderQuestion();scrollToQuiz()}});
 $("prev-question").addEventListener("click",()=>{if(current>0){current--;renderQuestion();scrollToQuiz()}});
-$("next-question").addEventListener("click",()=>{current=current===mcqData.length-1?0:current+1;renderQuestion();scrollToQuiz()});
-$("reset-mcq").addEventListener("click",()=>{answers=Array(mcqData.length).fill(null);current=0;renderQuestion()});
+$("next-question").addEventListener("click",()=>{if(current===mcqData.length-1){switchView("blanks");scrollToQuiz()}else{current++;renderQuestion();scrollToQuiz()}});
+$("reset-mcq").addEventListener("click",resetQuiz);
+$("restart-quiz").addEventListener("click",resetQuiz);
 function scrollToQuiz(){if(window.innerWidth<700)document.querySelector(".main-panel").scrollIntoView({behavior:"smooth"})}
 
 function renderPart2(){
-  $("blank-list").innerHTML=blanks.map((b,i)=>`<label class="blank-item">${i+1}. ${b[0]}<input id="blank-${i}" aria-label="第 ${i+1} 題答案">${b[2]}</label>`).join("");
+  $("blank-list").innerHTML=blanks.map((b,i)=>`<label class="blank-item">${i+1}. ${b[0]}<input id="blank-${i}" aria-label="第 ${i+1} 題答案">${b[2]}<span id="blank-answer-${i}" class="field-answer" hidden></span></label>`).join("");
   const choices=matches.map(m=>m[1]);
-  $("match-list").innerHTML=matches.map((m,i)=>`<label class="match-item"><strong>${i+1}. ${m[0]}</strong><select id="match-${i}"><option value="">請選擇正確職責</option>${choices.map(c=>`<option value="${c}">${c}</option>`).join("")}</select></label>`).join("");
+  $("match-list").innerHTML=matches.map((m,i)=>`<label class="match-item"><strong>${i+1}. ${m[0]}</strong><span><select id="match-${i}"><option value="">請選擇正確職責</option>${choices.map(c=>`<option value="${c}">${c}</option>`).join("")}</select><span id="match-answer-${i}" class="field-answer" hidden></span></span></label>`).join("");
 }
-$("check-part2").addEventListener("click",()=>{
+
+function gradePart2(){
   let score=0;
-  blanks.forEach((b,i)=>{const input=$(`blank-${i}`);const ok=input.value.trim()===b[1];input.className=ok?"right":"wrong";if(ok)score++});
-  matches.forEach((m,i)=>{const select=$(`match-${i}`);const ok=select.value===m[1];select.className=ok?"right":"wrong";if(ok)score++});
-  $("part2-result").className="result-banner";$("part2-result").textContent=`本部分答對 ${score}／${blanks.length+matches.length} 項。紅色欄位可再參考課堂重點。`;
-});
+  blanks.forEach((b,i)=>{
+    const input=$(`blank-${i}`), ok=input.value.trim()===b[1], answer=$(`blank-answer-${i}`);
+    input.className=ok?"right":"wrong";input.readOnly=true;
+    answer.hidden=ok;answer.textContent=`正確答案：${b[1]}`;
+    if(ok)score++;
+  });
+  matches.forEach((m,i)=>{
+    const select=$(`match-${i}`), ok=select.value===m[1], answer=$(`match-answer-${i}`);
+    select.className=ok?"right":"wrong";select.disabled=true;
+    answer.hidden=ok;answer.textContent=`正確答案：${m[1]}`;
+    if(ok)score++;
+  });
+  $("part2-result").hidden=false;
+  $("part2-result").textContent=`填空與配對：答對 ${score}／${blanks.length+matches.length} 項。`;
+  return score;
+}
 
 function renderSAQ(){
-  $("saq-list").innerHTML=saqs.map((s,i)=>`<article class="saq-card"><h3>${i+1}. ${s.q}</h3><p>${s.hint}</p><textarea aria-label="簡答題 ${i+1}" placeholder="請在此整理你的答案……"></textarea><button class="btn" data-answer="${i}">顯示參考答案</button><div id="reference-${i}" class="reference" hidden><strong>參考答案：</strong>${s.a}</div></article>`).join("");
+  $("saq-list").innerHTML=saqs.map((s,i)=>`<article class="saq-card"><h3>${i+1}. ${s.q}</h3><p>${s.hint}</p><textarea id="saq-${i}" aria-label="簡答題 ${i+1}" placeholder="請在此整理你的答案……"></textarea><div id="reference-${i}" class="reference" hidden><strong>參考答案：</strong>${s.a}</div></article>`).join("");
 }
-$("saq-list").addEventListener("click",e=>{const b=e.target.closest("[data-answer]");if(!b)return;const ref=$(`reference-${b.dataset.answer}`);ref.hidden=!ref.hidden;b.textContent=ref.hidden?"顯示參考答案":"收起參考答案"});
 
-document.querySelectorAll(".mode-tab").forEach(tab=>tab.addEventListener("click",()=>{
-  document.querySelectorAll(".mode-tab").forEach(t=>{t.classList.toggle("active",t===tab);t.setAttribute("aria-selected",t===tab)});
-  document.querySelectorAll(".section-view").forEach(view=>view.hidden=view.id!==`view-${tab.dataset.view}`);
-  document.querySelector(".side-panel").hidden=tab.dataset.view!=="mcq";
-}));
+function switchView(viewName){
+  document.querySelectorAll(".mode-tab").forEach(tab=>{
+    const active=tab.dataset.view===viewName;
+    tab.classList.toggle("active",active);
+    tab.setAttribute("aria-selected",String(active));
+  });
+  document.querySelectorAll(".section-view").forEach(view=>view.hidden=view.id!==`view-${viewName}`);
+  document.querySelector(".side-panel").hidden=viewName!=="mcq";
+}
+document.querySelectorAll(".mode-tab").forEach(tab=>tab.addEventListener("click",()=>switchView(tab.dataset.view)));
+
+function completionCounts(){
+  return {
+    mcq:answers.filter(v=>v===null).length,
+    blanks:blanks.filter((_,i)=>!$(`blank-${i}`).value.trim()).length,
+    matches:matches.filter((_,i)=>!$(`match-${i}`).value).length,
+    saqs:saqs.filter((_,i)=>!$(`saq-${i}`).value.trim()).length
+  };
+}
+
+document.addEventListener("input",()=>{if(!submitted)$("submission-result").hidden=true});
+document.addEventListener("change",()=>{if(!submitted)$("submission-result").hidden=true});
+
+$("submit-quiz").addEventListener("click",()=>{
+  if(submitted)return;
+  const missing=completionCounts();
+  const missingTotal=Object.values(missing).reduce((sum,n)=>sum+n,0);
+  const result=$("submission-result");
+  result.hidden=false;
+  if(missingTotal){
+    result.textContent=`尚有 ${missingTotal} 項未作答：選擇題 ${missing.mcq}、填空 ${missing.blanks}、配對 ${missing.matches}、簡答 ${missing.saqs}。請完成後再交卷。`;
+    return;
+  }
+  submitted=true;
+  const mcqScore=answers.reduce((score,value,i)=>score+(value===mcqData[i].answer?1:0),0);
+  const part2Score=gradePart2();
+  saqs.forEach((_,i)=>{$(`saq-${i}`).readOnly=true;$(`reference-${i}`).hidden=false});
+  result.textContent=`已完成！選擇題答對 ${mcqScore}／${mcqData.length} 題，填空與配對答對 ${part2Score}／${blanks.length+matches.length} 項。簡答題請對照下方參考答案自行檢視。`;
+  $("submit-quiz").hidden=true;
+  $("restart-quiz").hidden=false;
+  $("reset-mcq").hidden=false;
+  renderQuestion();
+});
+
+function resetQuiz(){
+  submitted=false;
+  current=0;
+  answers=Array(mcqData.length).fill(null);
+  renderPart2();renderSAQ();renderQuestion();
+  $("part2-result").hidden=true;
+  $("part2-result").textContent="";
+  $("submission-result").hidden=true;
+  $("submission-result").textContent="";
+  $("submit-quiz").hidden=false;
+  $("restart-quiz").hidden=true;
+  $("reset-mcq").hidden=true;
+  switchView("mcq");
+  scrollToQuiz();
+}
 
 renderQuestion(); renderPart2(); renderSAQ();

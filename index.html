@@ -14,7 +14,7 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="brand"><h1>五代十國與北宋中央集權</h1><span class="brand-subtitle">互動小測</span></div>
-      <span class="header-note">依課堂重點設計・即時核對答案</span>
+      <span class="header-note">完成全部題目後統一對答案</span>
     </div>
   </header>
 
@@ -31,18 +31,20 @@
           <div class="progress-head"><h2 id="question-counter">第 1 題／共 15 題</h2><span id="progress-label">作答進度 0%</span></div>
           <div class="progress-track" aria-hidden="true"><div id="progress-fill" class="progress-fill"></div></div>
           <article aria-live="polite"><h2 id="question-title" class="question-title"></h2><div id="options" class="options"></div><div id="explanation" class="explanation" hidden></div></article>
-          <div class="quiz-actions"><button id="reset-mcq" class="btn">重新作答</button><div class="action-group"><button id="prev-question" class="btn">上一題</button><button id="next-question" class="btn primary">下一題</button></div></div>
+          <div class="quiz-actions"><button id="reset-mcq" class="btn" hidden>重新作答</button><div class="action-group"><button id="prev-question" class="btn">上一題</button><button id="next-question" class="btn primary">下一題</button></div></div>
         </div>
 
         <div id="view-blanks" class="section-view" hidden>
           <h2 class="section-heading">填空與配對</h2><p class="section-intro">填寫關鍵詞，再把北宋官職與職責配對。系統會標示需要重溫的部分。</p>
           <div class="subsection"><h3>甲、重點填空</h3><div id="blank-list" class="blank-list"></div></div>
           <div class="subsection"><h3>乙、職務與措施配對</h3><div id="match-list" class="match-list"></div></div>
-          <div class="quiz-actions"><span id="part2-result" aria-live="polite"></span><button id="check-part2" class="btn primary">核對答案</button></div>
+          <div id="part2-result" class="result-banner" hidden aria-live="polite"></div>
         </div>
 
         <div id="view-saq" class="section-view" hidden>
-          <h2 class="section-heading">簡答思考題</h2><p class="section-intro">先用自己的說法作答，再展開參考答案。重點在於解釋政策與目的的關係。</p><div id="saq-list" class="saq-list"></div>
+          <h2 class="section-heading">簡答思考題</h2><p class="section-intro">先用自己的說法作答。完成所有題目並交卷後，才會顯示成績、解析與參考答案。</p><div id="saq-list" class="saq-list"></div>
+          <div id="submission-result" class="result-banner" hidden aria-live="polite"></div>
+          <div class="quiz-actions"><button id="restart-quiz" class="btn" hidden>重新作答</button><button id="submit-quiz" class="btn primary">完成並對答案</button></div>
         </div>
       </section>
 
@@ -50,7 +52,7 @@
         <h3>我的作答進度</h3>
         <div class="score-summary">
           <div id="score-ring" class="score-ring"><div class="ring-copy"><strong id="answered-count">0</strong><span>/ 15 已作答</span></div></div>
-          <div><div class="score-stats"><span>答對 <strong id="correct-count">0</strong></span><span>答錯 <strong id="wrong-count">0</strong></span></div><div id="question-grid" class="question-grid" aria-label="題目一覽"></div></div>
+          <div><div id="score-stats" class="score-stats" hidden><span>答對 <strong id="correct-count">0</strong></span><span>答錯 <strong id="wrong-count">0</strong></span></div><div id="question-grid" class="question-grid" aria-label="題目一覽"></div></div>
         </div>
         <ul class="topic-list"><li class="active">五代十國的背景與特點</li><li>陳橋兵變與北宋建立</li><li>宋太祖的統一策略</li><li>北宋中央集權政策</li><li>政策的作用與影響</li></ul>
       </aside>
