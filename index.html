@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="五代十國與北宋中央集權互動小測，包含選擇題、填空配對和簡答思考題。">
+  <meta name="description" content="五代十國與北宋中央集權互動小測：逐題完成選擇、填空與配對，最後查看總分。">
   <title>五代十國與北宋中央集權｜互動小測</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,47 +14,50 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="brand"><h1>五代十國與北宋中央集權</h1><span class="brand-subtitle">互動小測</span></div>
-      <span class="header-note">完成全部題目後統一對答案</span>
+      <span class="header-note">逐題完成・最後查看總分</span>
     </div>
   </header>
 
   <main class="page-shell">
-    <nav class="mode-tabs" aria-label="題型選擇">
-      <button class="mode-tab active" data-view="mcq" aria-selected="true"><span class="tab-index">一</span><span class="tab-copy"><strong>選擇題</strong><small>15 題・逐題作答</small></span></button>
-      <button class="mode-tab" data-view="blanks" aria-selected="false"><span class="tab-index">二</span><span class="tab-copy"><strong>填空與配對</strong><small>鞏固概念・配對填空</small></span></button>
-      <button class="mode-tab" data-view="saq" aria-selected="false"><span class="tab-index">三</span><span class="tab-copy"><strong>簡答思考題</strong><small>深入理解・培養思辨</small></span></button>
-    </nav>
-
-    <div class="quiz-layout">
-      <section class="panel main-panel">
-        <div id="view-mcq" class="section-view">
-          <div class="progress-head"><h2 id="question-counter">第 1 題／共 15 題</h2><span id="progress-label">作答進度 0%</span></div>
+    <div id="quiz-layout" class="quiz-layout">
+      <section class="panel main-panel" aria-label="小測題目與結果">
+        <div id="view-quiz">
+          <div class="progress-head"><h2 id="question-counter">第 1 題／共 33 題</h2><span id="progress-label">已完成 0／33 題</span></div>
           <div class="progress-track" aria-hidden="true"><div id="progress-fill" class="progress-fill"></div></div>
-          <article aria-live="polite"><h2 id="question-title" class="question-title"></h2><div id="options" class="options"></div><div id="explanation" class="explanation" hidden></div></article>
-          <div class="quiz-actions"><button id="reset-mcq" class="btn" hidden>重新作答</button><div class="action-group"><button id="prev-question" class="btn">上一題</button><button id="next-question" class="btn primary">下一題</button></div></div>
+          <article aria-live="polite">
+            <p id="question-kind" class="question-kind">選擇題</p>
+            <h2 id="question-title" class="question-title"></h2>
+            <div id="question-body"></div>
+          </article>
+          <p class="unlock-note">完成本題後即可解鎖下一題。交卷前可返回修改答案。</p>
+          <div class="quiz-actions"><button id="prev-question" class="btn" disabled>上一題</button><button id="next-question" class="btn primary" disabled>下一題</button></div>
         </div>
 
-        <div id="view-blanks" class="section-view" hidden>
-          <h2 class="section-heading">填空與配對</h2><p class="section-intro">填寫關鍵詞，再把北宋官職與職責配對。系統會標示需要重溫的部分。</p>
-          <div class="subsection"><h3>甲、重點填空</h3><div id="blank-list" class="blank-list"></div></div>
-          <div class="subsection"><h3>乙、職務與措施配對</h3><div id="match-list" class="match-list"></div></div>
-          <div id="part2-result" class="result-banner" hidden aria-live="polite"></div>
-        </div>
-
-        <div id="view-saq" class="section-view" hidden>
-          <h2 class="section-heading">簡答思考題</h2><p class="section-intro">先用自己的說法作答。完成所有題目並交卷後，才會顯示成績、解析與參考答案。</p><div id="saq-list" class="saq-list"></div>
-          <div id="submission-result" class="result-banner" hidden aria-live="polite"></div>
-          <div class="quiz-actions"><button id="restart-quiz" class="btn" hidden>重新作答</button><button id="submit-quiz" class="btn primary">完成並對答案</button></div>
+        <div id="view-results" hidden>
+          <p class="question-kind">全卷完成</p>
+          <h2 class="result-title">小測總分</h2>
+          <div class="result-total"><strong id="total-score">0</strong><span>／33 分</span></div>
+          <p id="result-message" class="result-message"></p>
+          <div class="score-breakdown" aria-label="各題型得分">
+            <div><span>選擇題</span><strong id="mcq-score">0／15</strong></div>
+            <div><span>填空題</span><strong id="blank-score">0／12</strong></div>
+            <div><span>配對題</span><strong id="match-score">0／6</strong></div>
+          </div>
+          <button id="restart-quiz" class="btn primary restart-btn">重新作答</button>
+          <section class="review-section" aria-label="答案與解析">
+            <h3>答案與解析</h3>
+            <p>展開題目可查看你的答案、正確答案與選擇題解析。</p>
+            <div id="review-list" class="review-list"></div>
+          </section>
         </div>
       </section>
 
-      <aside class="panel side-panel" aria-label="作答進度">
-        <h3>我的作答進度</h3>
-        <div class="score-summary">
-          <div id="score-ring" class="score-ring"><div class="ring-copy"><strong id="answered-count">0</strong><span>/ 15 已作答</span></div></div>
-          <div><div id="score-stats" class="score-stats" hidden><span>答對 <strong id="correct-count">0</strong></span><span>答錯 <strong id="wrong-count">0</strong></span></div><div id="question-grid" class="question-grid" aria-label="題目一覽"></div></div>
-        </div>
-        <ul class="topic-list"><li class="active">五代十國的背景與特點</li><li>陳橋兵變與北宋建立</li><li>宋太祖的統一策略</li><li>北宋中央集權政策</li><li>政策的作用與影響</li></ul>
+      <aside id="side-panel" class="panel side-panel" aria-label="作答進度">
+        <h3>作答進度</h3>
+        <div id="score-ring" class="score-ring"><div class="ring-copy"><strong id="answered-count">0</strong><span>／33 已完成</span></div></div>
+        <p class="overview-note">淺金色題號已完成；灰色題號尚未解鎖。</p>
+        <div id="question-grid" class="question-grid" aria-label="題目一覽"></div>
+        <ul class="section-list"><li>選擇題 <span>1–15</span></li><li>填空題 <span>16–27</span></li><li>配對題 <span>28–33</span></li></ul>
       </aside>
     </div>
     <p class="footer-note">「以史為鑑，可以知興替。」——《資治通鑑》</p>

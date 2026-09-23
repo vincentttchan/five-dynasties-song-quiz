@@ -36,149 +36,134 @@ const matches = [
   ["通判","監察地方長官知州"],["禁軍","精銳部隊置於中央"],["廂軍","老弱部隊鎮守地方"]
 ];
 
-const saqs = [
-  {q:"宋太祖為何要大力推行中央集權？請結合五代政局說明。",hint:"可從武人專政、地方力量和政權更替三方面思考。",a:"五代時武人專政，地方軍事力量過強，武將常靠兵變篡位，政權更替頻繁。宋太祖本人亦由陳橋兵變取得帝位，因此希望把政治、經濟和軍事權力集中中央，防止地方或武將再次作亂，建立較長治久安的統治。"},
-  {q:"列出兩項北宋削弱地方權力的措施，並解釋其作用。",hint:"措施與作用要一一對應。",a:"例如：（一）派文官任知州並設通判監察，分化地方行政權；（二）除必要開支外，地方稅收上繳中央，削弱地方財力；（三）精銳禁軍置於中央，地方只留老弱廂軍，削弱地方軍力。任答兩項並說明作用即可。"},
-  {q:"「重文輕武」有助鞏固宋朝統治，但可能帶來甚麼問題？",hint:"嘗試從官員、軍事與國家發展三方面分析。",a:"重文輕武有助防止武將專權並提高文官地位，但也可能造成官員數目增加、行政效率下降和財政負擔；武將地位受壓亦可能削弱軍隊指揮與戰鬥力。這些都是中央集權政策可能付出的代價。"}
+const questions = [
+  ...mcqData.map(item => ({type:"mcq",...item})),
+  ...blanks.map(([before,answer,after]) => ({type:"blank",before,answer,after})),
+  ...matches.map(([role,answer]) => ({type:"match",role,answer}))
 ];
-
-let current = 0;
-let answers = Array(mcqData.length).fill(null);
-let submitted = false;
-const $ = id => document.getElementById(id);
+const matchChoices = matches.map(([,answer]) => answer);
 const letters = ["A","B","C","D"];
+const $ = id => document.getElementById(id);
+const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[char]);
+let answers = Array(questions.length).fill(null);
+let current = 0;
+
+function isAnswered(index){
+  const answer = answers[index];
+  return answer !== null && String(answer).trim() !== "";
+}
+
+function firstUnanswered(){
+  const index = questions.findIndex((_,i) => !isAnswered(i));
+  return index === -1 ? questions.length : index;
+}
+
+function renderProgress(){
+  const completed = answers.filter((_,i) => isAnswered(i)).length;
+  const unlockedThrough = firstUnanswered();
+  $("question-counter").textContent = `第 ${current+1} 題／共 ${questions.length} 題`;
+  $("progress-label").textContent = `已完成 ${completed}／${questions.length} 題`;
+  $("progress-fill").style.width = `${completed/questions.length*100}%`;
+  $("answered-count").textContent = completed;
+  $("score-ring").style.setProperty("--ring",`${completed/questions.length*100}%`);
+  $("question-grid").innerHTML = questions.map((_,i) => {
+    const locked = i > unlockedThrough;
+    const state = i === current ? "current" : locked ? "locked" : isAnswered(i) ? "answered" : "";
+    return `<button class="q-jump ${state}" data-jump="${i}" aria-label="第 ${i+1} 題${locked?"，尚未解鎖":""}" ${locked?"disabled":""}>${i+1}</button>`;
+  }).join("");
+  $("prev-question").disabled = current === 0;
+  $("next-question").disabled = !isAnswered(current);
+  $("next-question").textContent = current === questions.length-1 ? "完成並查看總分" : "下一題";
+}
 
 function renderQuestion(){
-  const item=mcqData[current];
-  const answered=answers.filter(v=>v!==null).length;
-  $("question-counter").textContent=`第 ${current+1} 題／共 ${mcqData.length} 題`;
-  $("progress-label").textContent=`作答進度 ${Math.round(answered/mcqData.length*100)}%`;
-  $("progress-fill").style.width=`${answered/mcqData.length*100}%`;
-  $("question-title").textContent=item.q;
-  $("options").innerHTML=item.options.map((text,index)=>{
-    let state="";
-    if(submitted){if(index===item.answer)state="correct";else if(index===answers[current])state="incorrect"}
-    else if(index===answers[current])state="selected";
-    return `<button class="option ${state}" data-option="${index}" aria-pressed="${answers[current]===index}" ${submitted?"disabled":""}><span class="option-letter">${letters[index]}</span><span>${text}</span></button>`;
-  }).join("");
-  const exp=$("explanation");
-  if(submitted){exp.hidden=false;exp.innerHTML=`<strong>${answers[current]===item.answer?"答對了":`正確答案：${letters[item.answer]}`}</strong>${item.exp}`}else exp.hidden=true;
-  $("prev-question").disabled=current===0;
-  $("next-question").textContent=current===mcqData.length-1?"前往填空與配對":"下一題";
-  document.querySelectorAll(".topic-list li").forEach((li,i)=>li.classList.toggle("active",i===item.topic));
-  updateOverview(answered);
-}
-
-function updateOverview(answered=answers.filter(v=>v!==null).length){
-  $("answered-count").textContent=answered;
-  $("score-ring").style.setProperty("--ring",`${answered/mcqData.length*100}%`);
-  $("score-stats").hidden=!submitted;
-  if(submitted){
-    const correct=answers.reduce((n,v,i)=>n+(v===mcqData[i].answer?1:0),0);
-    $("correct-count").textContent=correct;
-    $("wrong-count").textContent=answered-correct;
+  const item = questions[current];
+  $("question-kind").textContent = item.type === "mcq" ? "選擇題" : item.type === "blank" ? "填空題" : "配對題";
+  if(item.type === "mcq"){
+    $("question-title").textContent = item.q;
+    $("question-body").innerHTML = `<div class="options">${item.options.map((option,i) => `<button class="option ${answers[current]===i?"selected":""}" data-option="${i}" aria-pressed="${answers[current]===i}"><span class="option-letter">${letters[i]}</span><span>${escapeHtml(option)}</span></button>`).join("")}</div>`;
+  } else if(item.type === "blank"){
+    $("question-title").textContent = "填入正確詞語";
+    $("question-body").innerHTML = `<label class="blank-question">${escapeHtml(item.before)}<input id="answer-input" aria-label="第 ${current+1} 題填空答案" autocomplete="off" spellcheck="false" value="${escapeHtml(answers[current]??"")}">${escapeHtml(item.after)}</label>`;
+  } else {
+    $("question-title").textContent = `「${item.role}」對應哪項職責？`;
+    $("question-body").innerHTML = `<label class="match-question" for="answer-input">請選擇正確職責</label><select id="answer-input"><option value="">請選擇職責</option>${matchChoices.map(choice => `<option value="${escapeHtml(choice)}" ${answers[current]===choice?"selected":""}>${escapeHtml(choice)}</option>`).join("")}</select>`;
   }
-  $("question-grid").innerHTML=mcqData.map((_,i)=>{
-    const state=i===current?"current":answers[i]===null?"":submitted?(answers[i]===mcqData[i].answer?"right":"wrong"):"answered";
-    return `<button class="q-jump ${state}" data-jump="${i}" aria-label="前往第 ${i+1} 題">${i+1}</button>`;
-  }).join("");
+  renderProgress();
 }
 
-$("options").addEventListener("click",e=>{const b=e.target.closest("[data-option]");if(!b||submitted)return;answers[current]=Number(b.dataset.option);$("submission-result").hidden=true;renderQuestion()});
-$("question-grid").addEventListener("click",e=>{const b=e.target.closest("[data-jump]");if(b){current=Number(b.dataset.jump);renderQuestion();scrollToQuiz()}});
-$("prev-question").addEventListener("click",()=>{if(current>0){current--;renderQuestion();scrollToQuiz()}});
-$("next-question").addEventListener("click",()=>{if(current===mcqData.length-1){switchView("blanks");scrollToQuiz()}else{current++;renderQuestion();scrollToQuiz()}});
-$("reset-mcq").addEventListener("click",resetQuiz);
-$("restart-quiz").addEventListener("click",resetQuiz);
-function scrollToQuiz(){if(window.innerWidth<700)document.querySelector(".main-panel").scrollIntoView({behavior:"smooth"})}
-
-function renderPart2(){
-  $("blank-list").innerHTML=blanks.map((b,i)=>`<label class="blank-item">${i+1}. ${b[0]}<input id="blank-${i}" aria-label="第 ${i+1} 題答案">${b[2]}<span id="blank-answer-${i}" class="field-answer" hidden></span></label>`).join("");
-  const choices=matches.map(m=>m[1]);
-  $("match-list").innerHTML=matches.map((m,i)=>`<label class="match-item"><strong>${i+1}. ${m[0]}</strong><span><select id="match-${i}"><option value="">請選擇正確職責</option>${choices.map(c=>`<option value="${c}">${c}</option>`).join("")}</select><span id="match-answer-${i}" class="field-answer" hidden></span></span></label>`).join("");
+function showQuestion(index){
+  if(index < 0 || index >= questions.length || index > firstUnanswered()) return;
+  current = index;
+  renderQuestion();
+  if(window.innerWidth < 700) $("quiz-layout").scrollIntoView({behavior:"smooth"});
 }
 
-function gradePart2(){
-  let score=0;
-  blanks.forEach((b,i)=>{
-    const input=$(`blank-${i}`), ok=input.value.trim()===b[1], answer=$(`blank-answer-${i}`);
-    input.className=ok?"right":"wrong";input.readOnly=true;
-    answer.hidden=ok;answer.textContent=`正確答案：${b[1]}`;
-    if(ok)score++;
-  });
-  matches.forEach((m,i)=>{
-    const select=$(`match-${i}`), ok=select.value===m[1], answer=$(`match-answer-${i}`);
-    select.className=ok?"right":"wrong";select.disabled=true;
-    answer.hidden=ok;answer.textContent=`正確答案：${m[1]}`;
-    if(ok)score++;
-  });
-  $("part2-result").hidden=false;
-  $("part2-result").textContent=`填空與配對：答對 ${score}／${blanks.length+matches.length} 項。`;
-  return score;
-}
-
-function renderSAQ(){
-  $("saq-list").innerHTML=saqs.map((s,i)=>`<article class="saq-card"><h3>${i+1}. ${s.q}</h3><p>${s.hint}</p><textarea id="saq-${i}" aria-label="簡答題 ${i+1}" placeholder="請在此整理你的答案……"></textarea><div id="reference-${i}" class="reference" hidden><strong>參考答案：</strong>${s.a}</div></article>`).join("");
-}
-
-function switchView(viewName){
-  document.querySelectorAll(".mode-tab").forEach(tab=>{
-    const active=tab.dataset.view===viewName;
-    tab.classList.toggle("active",active);
-    tab.setAttribute("aria-selected",String(active));
-  });
-  document.querySelectorAll(".section-view").forEach(view=>view.hidden=view.id!==`view-${viewName}`);
-  document.querySelector(".side-panel").hidden=viewName!=="mcq";
-}
-document.querySelectorAll(".mode-tab").forEach(tab=>tab.addEventListener("click",()=>switchView(tab.dataset.view)));
-
-function completionCounts(){
-  return {
-    mcq:answers.filter(v=>v===null).length,
-    blanks:blanks.filter((_,i)=>!$(`blank-${i}`).value.trim()).length,
-    matches:matches.filter((_,i)=>!$(`match-${i}`).value).length,
-    saqs:saqs.filter((_,i)=>!$(`saq-${i}`).value.trim()).length
-  };
-}
-
-document.addEventListener("input",()=>{if(!submitted)$("submission-result").hidden=true});
-document.addEventListener("change",()=>{if(!submitted)$("submission-result").hidden=true});
-
-$("submit-quiz").addEventListener("click",()=>{
-  if(submitted)return;
-  const missing=completionCounts();
-  const missingTotal=Object.values(missing).reduce((sum,n)=>sum+n,0);
-  const result=$("submission-result");
-  result.hidden=false;
-  if(missingTotal){
-    result.textContent=`尚有 ${missingTotal} 項未作答：選擇題 ${missing.mcq}、填空 ${missing.blanks}、配對 ${missing.matches}、簡答 ${missing.saqs}。請完成後再交卷。`;
-    return;
-  }
-  submitted=true;
-  const mcqScore=answers.reduce((score,value,i)=>score+(value===mcqData[i].answer?1:0),0);
-  const part2Score=gradePart2();
-  saqs.forEach((_,i)=>{$(`saq-${i}`).readOnly=true;$(`reference-${i}`).hidden=false});
-  result.textContent=`已完成！選擇題答對 ${mcqScore}／${mcqData.length} 題，填空與配對答對 ${part2Score}／${blanks.length+matches.length} 項。簡答題請對照下方參考答案自行檢視。`;
-  $("submit-quiz").hidden=true;
-  $("restart-quiz").hidden=false;
-  $("reset-mcq").hidden=false;
+$("question-body").addEventListener("click",event => {
+  const button = event.target.closest("[data-option]");
+  if(!button) return;
+  answers[current] = Number(button.dataset.option);
   renderQuestion();
 });
+$("question-body").addEventListener("input",event => {
+  if(event.target.id !== "answer-input") return;
+  answers[current] = event.target.value;
+  renderProgress();
+});
+$("question-body").addEventListener("change",event => {
+  if(event.target.id !== "answer-input") return;
+  answers[current] = event.target.value;
+  renderProgress();
+});
+$("question-grid").addEventListener("click",event => {
+  const button = event.target.closest("[data-jump]");
+  if(button) showQuestion(Number(button.dataset.jump));
+});
+$("prev-question").addEventListener("click",() => showQuestion(current-1));
+$("next-question").addEventListener("click",() => {
+  if(!isAnswered(current)) return;
+  if(current === questions.length-1) finishQuiz();
+  else showQuestion(current+1);
+});
 
-function resetQuiz(){
-  submitted=false;
-  current=0;
-  answers=Array(mcqData.length).fill(null);
-  renderPart2();renderSAQ();renderQuestion();
-  $("part2-result").hidden=true;
-  $("part2-result").textContent="";
-  $("submission-result").hidden=true;
-  $("submission-result").textContent="";
-  $("submit-quiz").hidden=false;
-  $("restart-quiz").hidden=true;
-  $("reset-mcq").hidden=true;
-  switchView("mcq");
-  scrollToQuiz();
+function answerText(item,answer){
+  if(item.type === "mcq") return `${letters[answer]}．${item.options[answer]}`;
+  return String(answer).trim();
 }
 
-renderQuestion(); renderPart2(); renderSAQ();
+function finishQuiz(){
+  if(firstUnanswered() !== questions.length) return;
+  const mcqScore = mcqData.reduce((score,item,i) => score+(answers[i]===item.answer?1:0),0);
+  const blankScore = blanks.reduce((score,item,i) => score+(String(answers[mcqData.length+i]).trim()===item[1]?1:0),0);
+  const matchScore = matches.reduce((score,item,i) => score+(answers[mcqData.length+blanks.length+i]===item[1]?1:0),0);
+  const total = mcqScore+blankScore+matchScore;
+  $("total-score").textContent = total;
+  $("mcq-score").textContent = `${mcqScore}／${mcqData.length}`;
+  $("blank-score").textContent = `${blankScore}／${blanks.length}`;
+  $("match-score").textContent = `${matchScore}／${matches.length}`;
+  $("result-message").textContent = `你已完成全部 ${questions.length} 題。可在下方核對答案，或重新作答再挑戰。`;
+  $("review-list").innerHTML = questions.map((item,i) => {
+    const correct = item.type === "mcq" ? answers[i]===item.answer : String(answers[i]).trim()===item.answer;
+    const title = item.type === "mcq" ? item.q : item.type === "blank" ? `${item.before}＿＿${item.after}` : `「${item.role}」對應哪項職責？`;
+    const rightAnswer = item.type === "mcq" ? answerText(item,item.answer) : item.answer;
+    return `<details class="review-item ${correct?"right":"wrong"}"><summary>第 ${i+1} 題 · ${correct?"答對":"待重溫"} · ${escapeHtml(title)}</summary><div class="review-detail"><p>你的答案：${escapeHtml(answerText(item,answers[i]))}</p><p>正確答案：${escapeHtml(rightAnswer)}</p>${item.exp?`<p>解析：${escapeHtml(item.exp)}</p>`:""}</div></details>`;
+  }).join("");
+  $("view-quiz").hidden = true;
+  $("view-results").hidden = false;
+  $("side-panel").hidden = true;
+  $("quiz-layout").classList.add("results-mode");
+  window.scrollTo({top:0,behavior:"auto"});
+}
+
+$("restart-quiz").addEventListener("click",() => {
+  answers = Array(questions.length).fill(null);
+  current = 0;
+  $("view-results").hidden = true;
+  $("view-quiz").hidden = false;
+  $("side-panel").hidden = false;
+  $("quiz-layout").classList.remove("results-mode");
+  renderQuestion();
+  window.scrollTo({top:0,behavior:"auto"});
+});
+
+renderQuestion();
